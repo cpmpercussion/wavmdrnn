@@ -220,7 +220,7 @@ class DataProcessor:
 
 	def create_input_target_test_data(self, MFCCs, k=1, num_time_steps=101, percentile_test=0.1):
 		"""
-		Many-to-one, time-shifted-by-one (non mutually exclusive)
+		Many-to-one, time-shifted-by-k
 
 		input:
 			MFCCs: 2D-array with mfccs (from librosa the matrix is of form: D[f, t])
@@ -254,7 +254,7 @@ class DataProcessor:
 	def create_input_target_test_data_v2(self, MFCCs, k=1, num_time_steps=101, 
 		percentile_test=0.1):
 		"""
-		Many-to-many, one novel point, time-shifted-by-one (non mutually exclusive)
+		Many-to-many, one novel point, time-shifted-by-k
 		"""
 		MFCCs = np.swapaxes(MFCCs, 0, 1)
 		input_data = []

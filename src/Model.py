@@ -10,7 +10,7 @@ import tqdm
 import sys
 import keras
 import Callbacks
-sys.path.insert(0, "./../keras-mdn-layer/")
+#sys.path.insert(0, "./../keras-mdn-layer/")
 import mdn
 import time
 
@@ -28,7 +28,7 @@ class Model:
 
 
 	def train_and_predict(self, model_version=1, save_model=False, N_MIXES=5, 
-		model_name="./models/model.json", weights_name="./models/model.h5", 
+		model_name="./../models/model.json", weights_name="./../models/model.h5", 
 		input_data_start=0, num_preds=800, name="demo_v1"):
 
 		self.model_version = model_version
@@ -84,7 +84,7 @@ class Model:
 		plt.subplot(2,1,2)
 		plt.plot(history.history['val_loss'])
 		plt.title('validation loss')
-		fig.savefig("./plots/{}_loss.png".format(name))
+		fig.savefig("./../plots/{}_loss.png".format(name))
 		print(self.model.summary())
 
 
@@ -98,11 +98,11 @@ class Model:
 		self.OUTPUT_DIMS = self.data_processor.target_data.shape[2]
 
 		self.model = Sequential()
-		self.model.add(LSTM(units=220, return_sequences=True,
+		self.model.add(LSTM(units=50, return_sequences=True,
 			input_shape=self.data_processor.input_data.shape[1:]))
 		#self.model.add(LSTM(units=150, kernel_regularizer=regularizers.l2(0.2), return_sequences=True))
-		self.model.add(LSTM(units=220, return_sequences=True))
-		self.model.add(LSTM(units=220, return_sequences=True))
+		self.model.add(LSTM(units=50, return_sequences=True))
+		self.model.add(LSTM(units=50, return_sequences=True))
 		#self.model.add(LSTM(units=100, return_sequences=True))
 		#self.model.add(BatchNormalization())
 		self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.N_MIXES)))
@@ -122,7 +122,7 @@ class Model:
 		plt.subplot(2,1,2)
 		plt.plot(history.history['val_loss'])
 		plt.title('validation loss')
-		fig.savefig("./plots/{}_loss.png".format(name))
+		fig.savefig("./../plots/{}_loss.png".format(name))
 		print(self.model.summary())
 
 
@@ -174,11 +174,11 @@ class Model:
 		out_sequence = np.where(abs(out_sequence) > 1.0, 1.0, out_sequence)
 		print(out_sequence.shape, np.max(abs(out_sequence)))
 
-		librosa.output.write_wav('./results/{}.wav'.format(name), 
+		librosa.output.write_wav('./../results/{}.wav'.format(name), 
 			out_sequence, self.data_processor.sr, norm=True)
 		fig = plt.figure(3)
 		librosa.display.waveplot(out_sequence, self.data_processor.sr)
-		fig.savefig("./plots/{}.png".format(name))
+		fig.savefig("./../plots/{}.png".format(name))
 
 
 	def mixture_components(self, predictions, name, num_plots=1):
@@ -217,7 +217,7 @@ class Model:
 				plt.ylabel(y_label[y])
 				y += 1
 
-		fig.savefig("./plots/{}_stats.png".format(name))
+		fig.savefig("./../plots/{}_stats.png".format(name))
 
 
 	def train_model(self, model, num_epochs=5):
@@ -228,14 +228,16 @@ class Model:
 
 		assumes model of type version 1 or 2 and correct DataProcessor (i.e data version)
 		"""
-		self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, self.N_MIXES), optimizer='adam')
-		self.model.fit(self.data_processor.input_data, self.data_processor.target_data, epochs=num_epochs, batch_size=128, validation_split=0.15)
+		self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, self.N_MIXES), 
+			optimizer='adam')
+		self.model.fit(self.data_processor.input_data, self.data_processor.target_data, 
+			epochs=num_epochs, batch_size=128, validation_split=0.15)
 		self.model.summary()
 
 
 	@staticmethod
-	def saveModel(model, model_name="./models/model.json", 
-		weights_name="./models/model.h5"):
+	def saveModel(model, model_name="./../models/model.json", 
+		weights_name="./../models/model.h5"):
 		"""
 		Save anANN model and its weights
 		"""
@@ -247,8 +249,8 @@ class Model:
 		print("Saved model")
 
 	@staticmethod
-	def loadModel(model_name="./models/model.json", 
-		weights_name="./models/model.h5"):
+	def loadModel(model_name="./../models/model.json", 
+		weights_name="./../models/model.h5"):
 		"""
 		Load an ANN model and its weights
 		"""

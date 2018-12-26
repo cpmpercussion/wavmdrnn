@@ -6,12 +6,13 @@ import sys
 
 class DataProcessor:
 
-	def __init__(self, relative_path="./../german-single-speaker-speech-dataset/", 
+	def __init__(self, relative_path="./../../german-single-speaker-speech-dataset/", 
 		wav_file_name="meisterfloh/meisterfloh_", start_file_num=1, num_files=10, n_mfcc=20):
 		"""
 		num_files is max: 3081
 		"""
-		self.wav_generator = self._wav_generator(relative_path, wav_file_name, num_files, start_file_num)
+		self.wav_generator = self._wav_generator(relative_path, wav_file_name, 
+			num_files, start_file_num)
 		self._init_data(num_files, n_mfcc)
 		"""
 		self.MFCCs
@@ -201,7 +202,8 @@ class DataProcessor:
 
 		bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis),axis=0))
 
-		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
+		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, 
+			self.invlogamplitude(np.dot(dctm.T, mfccs)))
 
 		shape_inv_recon = librosa.istft(recon_stft).shape[0]
 
@@ -225,7 +227,8 @@ class DataProcessor:
 			num_time_steps: how many time steps for an input to predict one time step output
 
 		output:
-			input_data: 3D input data, of the form (MFCC_sequence_i, time_i, MFCC_i) or (sample, time_steps, feature)
+			input_data: 3D input data, of the form (MFCC_sequence_i, time_i, MFCC_i) or 
+				(sample, time_steps, feature)
 			target_data: 2D target data of the form (MFCC_sequence_i, MFCC_i)
 			validation_data: same as input_data and target_data (only part of the sequence, 1?)
 		"""
@@ -248,7 +251,8 @@ class DataProcessor:
 		self.target_data_test = self.target_data[int(num_iter*(1-percentile_test)):]
 
 
-	def create_input_target_test_data_v2(self, MFCCs, k=1, num_time_steps=101, percentile_test=0.1):
+	def create_input_target_test_data_v2(self, MFCCs, k=1, num_time_steps=101, 
+		percentile_test=0.1):
 		"""
 		Many-to-many, one novel point, time-shifted-by-one (non mutually exclusive)
 		"""
@@ -279,12 +283,12 @@ class DataProcessor:
 
 
 if __name__ == "__main__":
-
+	"""
 	n_mfcc = 35
 	dp = DataProcessor(num_files=1, n_mfcc=n_mfcc)
 
 	decoded_signal = dp.decode_MFCCs(dp.MFCCs)
-	"""
+	
 	plt.figure(2)
 	librosa.display.waveplot(decoded_signal, dp.sr)
 
@@ -294,10 +298,14 @@ if __name__ == "__main__":
 
 	plt.show()
 
-	librosa.output.write_wav('./test_n_mffcs/decompressed_{}.wav'.format(n_mfcc), decoded_signal, dp.sr, norm=True)
-	librosa.output.write_wav('./test_n_mffcs/noise_reduced_decompressed_{}.wav'.format(n_mfcc), noised_reduced_reconstructed, dp.sr, norm=True)
+	librosa.output.write_wav('./test_n_mffcs/decompressed_{}.wav'.format(n_mfcc), 
+	decoded_signal, dp.sr, norm=True)
+	librosa.output.write_wav('./test_n_mffcs/noise_reduced_decompressed_{}.wav'.format(n_mfcc), 
+	noised_reduced_reconstructed, dp.sr, norm=True)
+	
+	librosa.output.write_wav('./meisterfloh_file_1_compressed{}.wav'.format(n_mfcc), 
+	decoded_signal, dp.sr, norm=True)
 	"""
-	librosa.output.write_wav('./meisterfloh_file_1_compressed{}.wav'.format(n_mfcc), decoded_signal, dp.sr, norm=True)
-
+	print("Hello")
 
 

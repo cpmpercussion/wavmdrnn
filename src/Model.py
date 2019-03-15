@@ -10,7 +10,6 @@ import tqdm
 import sys
 import keras
 import Callbacks
-#sys.path.insert(0, "./../keras-mdn-layer/")
 import mdn
 import time
 
@@ -60,15 +59,15 @@ class Model:
 
         #sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=1.)
         #adam = keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-        self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
+        self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS,
             self.n_mixes), optimizer='nadam')
 
     def train(self, epochs, batch_size=64, validation_split=0.15):
         """
         Train kSM or TDkSM
         """
-        history = self.model.fit(self.data_processor.input_data, 
-            self.data_processor.target_data, epochs=epochs, 
+        history = self.model.fit(self.data_processor.input_data,
+            self.data_processor.target_data, epochs=epochs,
             batch_size=batch_size, validation_split=validation_split, callbacks=[self.stats_cb])
 
         self.save()
@@ -79,7 +78,7 @@ class Model:
         plt.subplot(2,1,2)
         plt.plot(history.history['val_loss'])
         plt.title('validation loss')
-        fig.savefig("./plots/{}_loss.png".format(self.name))
+        fig.savefig(self.base_dir + "plots/{}_loss.png".format(self.name))
         print(self.model.summary())
 
     def predict_sequence(self, input_data_start=0, num_preds=800,
@@ -133,11 +132,11 @@ class Model:
         out_sequence = np.where(abs(out_sequence) > 1.0, 1.0, out_sequence)
         print(out_sequence.shape, np.max(abs(out_sequence)))
 
-        librosa.output.write_wav('./../results/{}.wav'.format(self.name),
+        librosa.output.write_wav(self.base_dir + "results/{}.wav".format(self.name),
             out_sequence, self.data_processor.sr, norm=True)
         fig = plt.figure(3)
         librosa.display.waveplot(out_sequence, self.data_processor.sr)
-        fig.savefig("./../plots/{}.png".format(self.name))
+        fig.savefig(self.base_dir + "plots/{}.png".format(self.name))
 
 
     def _mixture_components(self, predictions, num_plots=1):

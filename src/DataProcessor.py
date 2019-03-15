@@ -6,27 +6,33 @@ import sys
 import glob
 import os
 
+DEFAULT_MFCC_FILENAME = "data_processor_mfccs.npz"
 
 class DataProcessor:
 
-    def __init__(self, wav_dir, n_mfcc=20):
+    def __init__(self, wav_dir, mfcc_file=None, n_mfcc=20):
         """
         num_files is max: 3081
         """
-        os.chdir(wav_dir)
-        file_names = glob.glob("*.wav")
-        self.num_wav_files = len(file_names)
-        self.wav_generator = self._wav_generator(wav_dir)
-        # data = self.concatenate_wavs(num_files)
-        data = np.array([])
-        for i in range(self.num_wav_files):
-            sample_i, sr = next(self.wav_generator)
-            data = np.concatenate([data, sample_i])
-        self.sr = sr
-        self.wav_shape = data.shape[0]
-        # data = self.reduce_noise(data)
-        # self.MFCCs = self.encode_wav(data, n_mfcc)
-        self.MFCCs = librosa.feature.mfcc(data, n_mfcc=n_mfcc)
+        if mfcc_file is None:
+            file_names = glob.glob("wav_dir" + "/*.wav")
+            self.num_wav_files = len(file_names)
+            self.wav_generator = self._wav_generator(wav_dir)
+            # data = self.concatenate_wavs(num_files)
+            data = np.array([])
+            for i in range(self.num_wav_files):
+                sample_i, sr = next(self.wav_generator)
+                data = np.concatenate([data, sample_i])
+            self.sr = sr
+            self.wav_shape = data.shape[0]
+            # data = self.reduce_noise(data)
+            self.MFCCs = librosa.feature.mfcc(data, n_mfcc=n_mfcc)
+            np.savez(DEFAULT_MFCC_FILENAME, mfccs=self.MFCCs)
+        else:
+            with np.load(mfcc_file) as data:
+                self.MFCCs = data['mfccs']
+
+        print("Loaded MFCCs with shape:", self.MFCCs.shape)
         """
         self.MFCCs
         self.normalization_version
@@ -48,9 +54,6 @@ class DataProcessor:
         for f in wav_names:
             file_path = wav_dir + "/" + f
             yield librosa.load(file_path)
-            # librosa gives resource warnings, but that is their backend problem
-            # yield librosa.load("{}{}{}".format(temp, i, ".wav"))
-
 
     def choose_data_model(self, normalization_version=2, data_version=1, num_time_steps=101,
         k=1, percentile_test=0.1):
@@ -60,11 +63,11 @@ class DataProcessor:
         self.normalization_version = normalization_version
         norm_MFFCs = None
         #if version is not included, then no normalization
-        if(normalization_version==1):
+        if(normalization_version == 1):
             norm_MFCCs = self.normalize_MFCCs()
-        elif(normalization_version==2):
+        elif(normalization_version == 2):
             norm_MFCCs = self.normalize_MFCCs_v2()
-        elif(normalization_version==3):
+        elif(normalization_version == 3):
             norm_MFCCs = self.normalize_MFCCs_v3()
         else:
             norm_MFCCs = self.MFCCs

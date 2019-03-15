@@ -14,8 +14,9 @@ class DataProcessor:
         """
         num_files is max: 3081
         """
+        self.sr = 22050  # default sample rate from librosa
         if mfcc_file is None:
-            file_names = glob.glob("wav_dir" + "/*.wav")
+            file_names = glob.glob(wav_dir + "/*.wav")
             self.num_wav_files = len(file_names)
             self.wav_generator = self._wav_generator(wav_dir)
             # data = self.concatenate_wavs(num_files)
@@ -44,7 +45,7 @@ class DataProcessor:
         self.std_MFCCs
         """
 
-    def _wav_generator(self, wav_dir, wav_names):
+    def _wav_generator(self, wav_names):
         """
         Generate wav-sequences
 
@@ -52,8 +53,7 @@ class DataProcessor:
             wav, sr: the 1D-wav sequence, sr is the sampling rate
         """
         for f in wav_names:
-            file_path = wav_dir + "/" + f
-            yield librosa.load(file_path)
+            yield librosa.load(f)
 
     def choose_data_model(self, normalization_version=2, data_version=1, num_time_steps=101,
         k=1, percentile_test=0.1):

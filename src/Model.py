@@ -14,21 +14,22 @@ import Callbacks
 import mdn
 import time
 
+
 class Model:
 
-    def __init__(self, data_processor, model_version = 1, name="default"):
+    def __init__(self, data_processor, base_dir, model_version = 1, name="default"):
         self.data_processor = data_processor
+        self.base_dir = base_dir
         self.name = name
         self.model_version = model_version
         self.stats_cb = Callbacks.stats_callback()
         self.stats_cb.Model = self
 
-
-    def kSM(self, N_MIXES=5):
+    def kSM(self, n_mixes=5):
         """
         Initialize k-Shifted Model
         """
-        self.N_MIXES = N_MIXES
+        self.n_mixes = n_mixes
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[1]
 
         self.model = Sequential()
@@ -36,16 +37,15 @@ class Model:
             input_shape=self.data_processor.input_data.shape[1:]))
         self.model.add(LSTM(units=160, return_sequences=True))
         self.model.add(LSTM(units=160))
-        self.model.add(mdn.MDN(self.OUTPUT_DIMS, self.N_MIXES))
+        self.model.add(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes))
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
-            self.N_MIXES), optimizer='nadam')
+            self.n_mixes), optimizer='nadam')
 
-
-    def TDkSM(self, N_MIXES=5, name="default2"):
+    def TDkSM(self, n_mixes=5, name="default2"):
         """
         Initialize Time-Distributed k-Shifted Model
         """
-        self.N_MIXES = N_MIXES
+        self.n_mixes = n_mixes
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[2]
 
         self.model = Sequential()
@@ -56,13 +56,12 @@ class Model:
         self.model.add(LSTM(units=50, return_sequences=True))
         #self.model.add(LSTM(units=100, return_sequences=True))
         #self.model.add(BatchNormalization())
-        self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.N_MIXES)))
+        self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes)))
 
         #sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=1.)
         #adam = keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
-            self.N_MIXES), optimizer='nadam')
-
+            self.n_mixes), optimizer='nadam')
 
     def train(self, epochs, batch_size=64, validation_split=0.15):
         """
@@ -80,12 +79,11 @@ class Model:
         plt.subplot(2,1,2)
         plt.plot(history.history['val_loss'])
         plt.title('validation loss')
-        fig.savefig("./../plots/{}_loss.png".format(self.name))
+        fig.savefig("./plots/{}_loss.png".format(self.name))
         print(self.model.summary())
 
-
-    def predict_sequence(self, input_data_start=0, num_preds=800, plot_stats=True, 
-        save_wav=True):
+    def predict_sequence(self, input_data_start=0, num_preds=800,
+                         plot_stats=True, save_wav=True):
         """
         Predict new wav file, display and save it
         """
@@ -96,23 +94,22 @@ class Model:
         pred_tot = []
         for i in tqdm.tqdm(range(num_preds)):
             pred = self.model.predict(new_sequence)
-            
+
             if(self.model_version == 1):
-                new_elem = mdn.sample_from_output(pred[0], 
-                    self.OUTPUT_DIMS, self.N_MIXES)
+                new_elem = mdn.sample_from_output(pred[0],
+                    self.OUTPUT_DIMS, self.n_mixes)
                 pred_tot.append(np.copy(pred))
             else:
-                new_elem = mdn.sample_from_output(pred[0][-1], 
-                    self.OUTPUT_DIMS, self.N_MIXES)
+                new_elem = mdn.sample_from_output(pred[0][-1],
+                    self.OUTPUT_DIMS, self.n_mixes)
                 pred_tot.append(np.copy(pred[0][-1]))
 
             new_sequence = np.concatenate((new_sequence[0,1:,:], new_elem))
             out_sequence = np.concatenate((out_sequence, new_elem))
-            new_sequence = new_sequence.reshape(1, new_sequence.shape[0], 
+            new_sequence = new_sequence.reshape(1, new_sequence.shape[0],
                 new_sequence.shape[1])
 
         pred_tot = np.array(pred_tot)
-        
         if(save_wav):
             self._inverse_and_plot_sequence(out_sequence)
         if(plot_stats):
@@ -136,7 +133,7 @@ class Model:
         out_sequence = np.where(abs(out_sequence) > 1.0, 1.0, out_sequence)
         print(out_sequence.shape, np.max(abs(out_sequence)))
 
-        librosa.output.write_wav('./../results/{}.wav'.format(self.name), 
+        librosa.output.write_wav('./../results/{}.wav'.format(self.name),
             out_sequence, self.data_processor.sr, norm=True)
         fig = plt.figure(3)
         librosa.display.waveplot(out_sequence, self.data_processor.sr)
@@ -149,8 +146,8 @@ class Model:
         """
         stats = []
         for i in range(len(predictions)):
-            mus, sigs, pis = mdn.split_mixture_params(np.squeeze(np.array(predictions))[i], 
-                self.OUTPUT_DIMS, self.N_MIXES)
+            mus, sigs, pis = mdn.split_mixture_params(np.squeeze(np.array(predictions))[i],
+                self.OUTPUT_DIMS, self.n_mixes)
             stats.append(np.zeros(12))
             stats[i][0] = np.mean(sigs)
             stats[i][1] = np.std(sigs)
@@ -183,16 +180,16 @@ class Model:
                 y += 1
 
         if(num_plots==1):
-            fig.savefig("./../plots/{}_stats.png".format(self.name))
+            fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name))
         elif(num_plots==2):
-            fig.savefig("./../plots/{}_stats.png".format(self.name+"_train"))
+            fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name + "_train"))
 
 
     def save(self):
         """
         Save model weights
         """
-        self.model.save_weights("./../models/{}.h5".format(self.name))
+        self.model.save_weights(self.base_dir + "models/{}.h5".format(self.name))
         print("Saved weights")
 
 
@@ -200,12 +197,5 @@ class Model:
         """
         Load model weights
         """
-        self.model.load_weights("./../models/{}.h5".format(self.name))
+        self.model.load_weights(self.base_dir + "models/{}.h5".format(self.name))
         print("Loaded weights")
-
-
-
-
-
-
-

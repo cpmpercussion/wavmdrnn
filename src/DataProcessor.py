@@ -3,16 +3,30 @@ import librosa.display
 import numpy as np
 import mmse
 import sys
+import glob
+import os
 
 
 class DataProcessor:
 
-    def __init__(self, wavpath, wav_file_name, start_file_num=1, num_files=10, n_mfcc=20):
+    def __init__(self, wav_dir, n_mfcc=20):
         """
         num_files is max: 3081
         """
-        self.wav_generator = self._wav_generator(wavpath, wav_file_name, num_files, start_file_num)
-        self._init_data(num_files, n_mfcc)
+        os.chdir(wav_dir)
+        file_names = glob.glob("*.wav")
+        self.num_wav_files = len(file_names)
+        self.wav_generator = self._wav_generator(wav_dir)
+        # data = self.concatenate_wavs(num_files)
+        data = np.array([])
+        for i in range(self.num_wav_files):
+            sample_i, sr = next(self.wav_generator)
+            data = np.concatenate([data, sample_i])
+        self.sr = sr
+        self.wav_shape = data.shape[0]
+        # data = self.reduce_noise(data)
+        # self.MFCCs = self.encode_wav(data, n_mfcc)
+        self.MFCCs = librosa.feature.mfcc(data, n_mfcc=n_mfcc)
         """
         self.MFCCs
         self.normalization_version
@@ -24,36 +38,19 @@ class DataProcessor:
         self.std_MFCCs
         """
 
-    def _wav_generator(self, relative_path, wav_file_name, num_files, start=1):
+    def _wav_generator(self, wav_dir, wav_names):
         """
         Generate wav-sequences
 
         output:
             wav, sr: the 1D-wav sequence, sr is the sampling rate
         """
-        files = relative_path + wav_file_name
-        for i in range(start, start+num_files):
-            temp = files
-
-            if(i < 10):
-                temp += "000"
-
-            elif(i < 100):
-                temp += "00"
-
-            elif(i < 1000):
-                temp += "0"
-
+        for f in wav_names:
+            file_path = wav_dir + "/" + f
+            yield librosa.load(file_path)
             # librosa gives resource warnings, but that is their backend problem
-            yield librosa.load("{}{}{}".format(temp, i, ".wav"))
+            # yield librosa.load("{}{}{}".format(temp, i, ".wav"))
 
-    def _init_data(self, num_files, n_mfcc):
-        """
-        Initialize audio data
-        """
-        data = self.concatenate_wavs(num_files)
-        #data = self.reduce_noise(data)
-        self.MFCCs = self.encode_wav(data, n_mfcc)
 
     def choose_data_model(self, normalization_version=2, data_version=1, num_time_steps=101,
         k=1, percentile_test=0.1):
@@ -94,26 +91,11 @@ class DataProcessor:
         else:
             return pred_norm_MFCCs
 
-    def concatenate_wavs(self, num_wav_files):
-        """
-        Concatenate several wav files into one long sequence (1D-array)
-        """
-        data = np.array([])
-        for i in range(num_wav_files):
-            sample_i, sr = next(self.wav_generator)
-            data = np.concatenate([data, sample_i])
-
-        #save sample rate as attribute
-        self.sr = sr
-        self.wav_shape = data.shape[0]
-
-        return data
-
     def encode_wav(self, data, n_mfcc):
         """
         Encode (and compress) wav-sequence to Mel-frequency cepstral coefficients (MFCCs)
-        
-        input: 
+
+        input:
             data: a 1D wav-sequence
 
         output: 2D-array with MFCCs
@@ -197,7 +179,8 @@ class DataProcessor:
         #recon = librosa.istft(np.sqrt(recon_stft))
         return recon
 
-    def create_input_target_test_data(self, MFCCs, k=1, num_time_steps=101, percentile_test=0.1):
+    def create_input_target_test_data(self, MFCCs, k=1, num_time_steps=101,
+                                      percentile_test=0.1):
         """
         Many-to-one, time-shifted-by-k
 
@@ -228,8 +211,8 @@ class DataProcessor:
         self.input_data_test = self.input_data[int(num_iter*(1-percentile_test)):]
         self.target_data_test = self.target_data[int(num_iter*(1-percentile_test)):]
 
-    def create_input_target_test_data_v2(self, MFCCs, k=1, num_time_steps=101, 
-        percentile_test=0.1):
+    def create_input_target_test_data_v2(self, MFCCs, k=1, num_time_steps=101,
+                                         percentile_test=0.1):
         """
         Many-to-many, one novel point, time-shifted-by-k
         """

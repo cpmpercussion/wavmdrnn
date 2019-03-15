@@ -4,7 +4,7 @@ import sys
 
 """
 TODO: 
-1. Create Model save each %% epoch
+1. Create Model save each %% epoch - DONE
 2. Test loading and prediction/further train
 3. Extend model selection to two separate methods, i.e a model selction and a train method
 4. Extend main with choice of: start_train, more_train, inference
@@ -13,7 +13,7 @@ TODO:
 7. Fix plots
 8. Restore data to include test data, such that we can perform inference on test set
 
--- START: create github and save there
+-- START: create github and save there - DONE
 """
 
 try:

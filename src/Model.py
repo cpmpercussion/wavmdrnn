@@ -1,6 +1,6 @@
 #from DataProcessor import DataProcessor
 import librosa, librosa.display
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 from keras.models import Sequential
 from keras.models import model_from_json
@@ -12,11 +12,12 @@ import keras
 import Callbacks
 import mdn
 import time
+import datetime
 
 
 class Model:
 
-    def __init__(self, data_processor, base_dir, model_version = 1, name="default"):
+    def __init__(self, data_processor, base_dir="../", model_version = 1, name="default"):
         self.data_processor = data_processor
         self.base_dir = base_dir
         self.name = name
@@ -66,19 +67,35 @@ class Model:
         """
         Train kSM or TDkSM
         """
+        date_string = datetime.datetime.today().strftime('%Y%m%d-%H_%M_%S')
+        filepath = self.base_dir + "wavmdrnn-E{epoch:02d}-VL{val_loss:.2f}.hdf5"
+        checkpoint = keras.callbacks.ModelCheckpoint(filepath,
+                                                     monitor='val_loss',
+                                                     verbose=1,
+                                                     save_best_only=True,
+                                                     mode='min')
+        terminateOnNaN = keras.callbacks.TerminateOnNaN()
+        tboard = keras.callbacks.TensorBoard(log_dir=self.base_dir + 'logs/' + date_string + "wavmdrnn",
+                                     histogram_freq=2,
+                                     batch_size=32,
+                                     write_graph=True,
+                                     update_freq='epoch')
+        callbacks = [checkpoint, terminateOnNaN, tboard, self.stats_cb]
         history = self.model.fit(self.data_processor.input_data,
-            self.data_processor.target_data, epochs=epochs,
-            batch_size=batch_size, validation_split=validation_split, callbacks=[self.stats_cb])
-
+                                 self.data_processor.target_data,
+                                 epochs=epochs,
+                                 batch_size=batch_size,
+                                 validation_split=validation_split,
+                                 callbacks=callbacks)
         self.save()
-        fig = plt.figure(4)
-        plt.subplot(2,1,1)
-        plt.plot(history.history['loss'])
-        plt.title('training loss')
-        plt.subplot(2,1,2)
-        plt.plot(history.history['val_loss'])
-        plt.title('validation loss')
-        fig.savefig(self.base_dir + "plots/{}_loss.png".format(self.name))
+        # fig = plt.figure(4)
+        # plt.subplot(2,1,1)
+        # plt.plot(history.history['loss'])
+        # plt.title('training loss')
+        # plt.subplot(2,1,2)
+        # plt.plot(history.history['val_loss'])
+        # plt.title('validation loss')
+        # fig.savefig(self.base_dir + "plots/{}_loss.png".format(self.name))
         print(self.model.summary())
 
     def predict_sequence(self, input_data_start=0, num_preds=800,
@@ -134,9 +151,9 @@ class Model:
 
         librosa.output.write_wav(self.base_dir + "results/{}.wav".format(self.name),
             out_sequence, self.data_processor.sr, norm=True)
-        fig = plt.figure(3)
-        librosa.display.waveplot(out_sequence, self.data_processor.sr)
-        fig.savefig(self.base_dir + "plots/{}.png".format(self.name))
+        #fig = plt.figure(3)
+        #librosa.display.waveplot(out_sequence, self.data_processor.sr)
+        #fig.savefig(self.base_dir + "plots/{}.png".format(self.name))
 
 
     def _mixture_components(self, predictions, num_plots=1):
@@ -163,25 +180,23 @@ class Model:
 
         stats = np.array(stats)
 
-        fig = plt.figure(num_plots)
-        x_label = ['mean', 'std', 'max', 'min']
-        y_label = ['sigs', 'means', 'pis']
-        x,y=0,0
-        for i in range(12):
-            plt.subplot(3,4,i+1)
-            plt.plot(np.linspace(0, len(stats)-1, len(stats)), stats[:,i])
-
-            if(i>7):
-                plt.xlabel(x_label[x])
-                x += 1
-            if((i+1)%4==1):
-                plt.ylabel(y_label[y])
-                y += 1
-
-        if(num_plots==1):
-            fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name))
-        elif(num_plots==2):
-            fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name + "_train"))
+        #fig = plt.figure(num_plots)
+        #x_label = ['mean', 'std', 'max', 'min']
+        #y_label = ['sigs', 'means', 'pis']
+        #x,y=0,0
+        #for i in range(12):
+        #    plt.subplot(3,4,i+1)
+        #    plt.plot(np.linspace(0, len(stats)-1, len(stats)), stats[:,i])
+        #    if(i>7):
+        #        plt.xlabel(x_label[x])
+        #        x += 1
+        #    if((i+1)%4==1):
+        #        plt.ylabel(y_label[y])
+        #        y += 1
+        #if(num_plots==1):
+        #    fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name))
+        #elif(num_plots==2):
+        #    fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name + "_train"))
 
 
     def save(self):

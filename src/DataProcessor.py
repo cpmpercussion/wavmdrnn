@@ -18,7 +18,7 @@ class DataProcessor:
         if mfcc_file is None:
             file_names = glob.glob(wav_dir + "/*.wav")
             self.num_wav_files = len(file_names)
-            self.wav_generator = self._wav_generator(wav_dir)
+            self.wav_generator = self._wav_generator(file_names)
             # data = self.concatenate_wavs(num_files)
             data = np.array([])
             for i in range(self.num_wav_files):

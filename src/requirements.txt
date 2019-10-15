@@ -1,0 +1,7 @@
+keras-mdn-layer
+tensorflow-gpu==0.14.0
+librosa
+matplotlib
+numpy
+keras
+tqdm

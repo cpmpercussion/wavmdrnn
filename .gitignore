@@ -128,3 +128,4 @@ dmypy.json
 *.h5
 *.npz
 *.hdf5
+*tfevents*

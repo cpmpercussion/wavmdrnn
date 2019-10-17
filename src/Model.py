@@ -41,27 +41,21 @@ class Model:
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
             self.n_mixes), optimizer='nadam')
 
-    def TDkSM(self, n_mixes=5, name="default2"):
+    def TDkSM(self, n_mixes=5, name="default2", n_units=256):
         """
         Initialize Time-Distributed k-Shifted Model
         """
         self.n_mixes = n_mixes
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[2]
-
         self.model = Sequential()
-        self.model.add(LSTM(units=50, return_sequences=True,
+        self.model.add(LSTM(units=n_units, return_sequences=True,
             input_shape=self.data_processor.input_data.shape[1:]))
-        #self.model.add(LSTM(units=150, kernel_regularizer=regularizers.l2(0.2), return_sequences=True))
-        self.model.add(LSTM(units=50, return_sequences=True))
-        self.model.add(LSTM(units=50, return_sequences=True))
-        #self.model.add(LSTM(units=100, return_sequences=True))
-        #self.model.add(BatchNormalization())
+        self.model.add(LSTM(units=n_units, return_sequences=True))
+        self.model.add(LSTM(units=n_units, return_sequences=True))
         self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes)))
-
-        #sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=1.)
-        #adam = keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS,
             self.n_mixes), optimizer='nadam')
+        self.model.summary()
 
     def train(self, epochs, batch_size=64, validation_split=0.15):
         """
@@ -96,7 +90,6 @@ class Model:
         # plt.plot(history.history['val_loss'])
         # plt.title('validation loss')
         # fig.savefig(self.base_dir + "plots/{}_loss.png".format(self.name))
-        print(self.model.summary())
 
     def predict_sequence(self, input_data_start=0, num_preds=800,
                          plot_stats=True, save_wav=True):

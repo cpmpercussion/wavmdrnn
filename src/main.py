@@ -24,20 +24,20 @@ parser.add_argument('-n', '--name', dest="name", action='store', default='derp',
 args = parser.parse_args()
 
 #Choices: 1 => kSM, 2 => TDkSM
-model_choice = 1
+model_choice = 2
 
 #Choices: 1 => [0, 1], 2 => N(0, 1), 3 => [-1, 1]
 normalization_version = 2
 
 num_files = 2
-n_mfcc = 35
+n_mfcc = 50
 num_time_steps = 201
 k = 1
 percentile_test = 0
 validation_split = 0.15
-num_epochs = 30
-N_MIXES = 5
-batch_size = 64
+num_epochs = 50
+N_MIXES = 10
+batch_size = 128
 input_data_start = 0
 num_preds = 50
 
@@ -51,20 +51,22 @@ data_processor.choose_data_model(normalization_version=normalization_version,
 model = Model(data_processor, model_version=model_choice, name=args.name)
 
 if(model_choice == 1):
-	model.kSM(n_mixes=N_MIXES)
+        print("k-shifted")
+        model.kSM(n_mixes=N_MIXES)
 else:
-	model.TDkSM(n_mixes=N_MIXES)
+        print("time distributed")
+        model.TDkSM(n_mixes=N_MIXES)
 
 if(args.start_train):
         print("Start_Train Mode")
         model.train(epochs=num_epochs, batch_size=batch_size, validation_split=validation_split)
-        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=True, save_wav=True)
+        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=False, save_wav=True)
 elif(args.more_train):
         print("More_Train Mode")
         model.load()
         model.train(epochs=num_epochs, batch_size=batch_size, validation_split=validation_split)
-        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=True, save_wav=True)
+        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=False, save_wav=True)
 elif(args.predict):
         print("Predict Mode")
         model.load()
-        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=True, save_wav=True)
+        model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=False, save_wav=True)

@@ -129,3 +129,5 @@ dmypy.json
 *.npz
 *.hdf5
 *tfevents*
+results
+

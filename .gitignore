@@ -129,5 +129,5 @@ dmypy.json
 *.npz
 *.hdf5
 *tfevents*
-
+*.wav
 .DS_Store

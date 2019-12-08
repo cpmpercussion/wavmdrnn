@@ -1,7 +1,7 @@
 from wavmdrnn.dataprocessor import DataProcessor
 from wavmdrnn import Model
 
-print("Running simple wavmdrnn experiment."
+print("Running simple wavmdrnn experiment.")
 # Setup hyperparameters
 model_choice = 2
 #Choices: 1 => [0, 1], 2 => N(0, 1), 3 => [-1, 1]

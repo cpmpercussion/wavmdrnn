@@ -6,17 +6,17 @@ Research Group for Robotics and Intelligent Systems, 2018.
 """
 import librosa, librosa.display
 import numpy as np
-from keras.models import Sequential
-from keras.models import model_from_json
-from keras.layers import Dense, LSTM, TimeDistributed, BatchNormalization, Bidirectional
-from keras import regularizers, optimizers
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.layers import Dense, LSTM, TimeDistributed, BatchNormalization, Bidirectional
+from tensorflow.keras import regularizers, optimizers
+import tensorflow.keras as keras
 import tqdm
 import sys
-import keras
-import Callbacks
 import mdn
 import time
 import datetime
+from .callbacks import stats_callback
 
 
 class Model:
@@ -26,46 +26,43 @@ class Model:
         self.base_dir = base_dir
         self.name = name
         self.model_version = model_version
-        self.stats_cb = Callbacks.stats_callback()
+        self.stats_cb = stats_callback()
         self.stats_cb.Model = self
 
-    def kSM(self, n_mixes=5):
+    def kSM(self, units=160, n_mixes=5):
         """
         Initialize k-Shifted Model
         """
         self.n_mixes = n_mixes
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[1]
-
         self.model = Sequential()
-        self.model.add(LSTM(units=160, return_sequences=True,  
+        self.model.add(LSTM(units=units, return_sequences=True,  
             input_shape=self.data_processor.input_data.shape[1:]))
-        self.model.add(LSTM(units=160, return_sequences=True))
-        self.model.add(LSTM(units=160))
+        self.model.add(LSTM(units=units, return_sequences=True))
+        self.model.add(LSTM(units=units))
         self.model.add(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes))
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
             self.n_mixes), optimizer='nadam')
+        print(self.model.summary())
+                
 
-    def TDkSM(self, n_mixes=5, name="default2"):
+    def TDkSM(self, n_mixes=5, units=50, name="default2"):
         """
         Initialize Time-Distributed k-Shifted Model
         """
         self.n_mixes = n_mixes
+        self.units = units
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[2]
-
         self.model = Sequential()
-        self.model.add(LSTM(units=50, return_sequences=True,
+        self.model.add(LSTM(units=self.units, return_sequences=True,
             input_shape=self.data_processor.input_data.shape[1:]))
-        #self.model.add(LSTM(units=150, kernel_regularizer=regularizers.l2(0.2), return_sequences=True))
-        self.model.add(LSTM(units=50, return_sequences=True))
-        self.model.add(LSTM(units=50, return_sequences=True))
-        #self.model.add(LSTM(units=100, return_sequences=True))
-        #self.model.add(BatchNormalization())
+        self.model.add(LSTM(units=self.units, return_sequences=True))
+        self.model.add(LSTM(units=self.units, return_sequences=True))
         self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes)))
-
-        #sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True, clipnorm=1.)
-        #adam = keras.optimizers.Adam(lr=0.00001, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS,
             self.n_mixes), optimizer='nadam')
+        print(self.model.summary())
+
 
     def train(self, epochs, batch_size=64, validation_split=0.15):
         """
@@ -92,7 +89,6 @@ class Model:
                                  validation_split=validation_split,
                                  callbacks=callbacks)
         self.save()
-        print(self.model.summary())
 
     def predict_sequence(self, input_data_start=0, num_preds=800,
                          plot_stats=True, save_wav=True):

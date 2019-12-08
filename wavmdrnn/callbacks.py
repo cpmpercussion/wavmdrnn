@@ -1,7 +1,7 @@
 import numpy as np
-import keras
+import tensorflow.keras
 
-class stats_callback(keras.callbacks.Callback):
+class stats_callback(tensorflow.keras.callbacks.Callback):
 	
 	def __init__(self):
 		self.Model = None

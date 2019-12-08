@@ -52,9 +52,9 @@ data_processor.choose_data_model(normalization_version=normalization_version,
 model = Model(data_processor, model_version=model_choice, name=args.name)
 
 if(model_choice == 1):
-	model.kSM(n_mixes=N_MIXES)
+	model.kSM(units=256, n_mixes=N_MIXES)
 else:
-	model.TDkSM(n_mixes=N_MIXES)
+	model.TDkSM(unit=256, n_mixes=N_MIXES)
 
 if(args.start_train):
         print("Start_Train Mode")

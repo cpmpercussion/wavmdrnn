@@ -1,14 +1,19 @@
 import librosa
 import librosa.display
 import numpy as np
-import mmse
 import sys
 import glob
 import os
+from .mmse import MMSESTSA
+
 
 DEFAULT_MFCC_FILENAME = "data_processor_mfccs.npz"
 
+
 class DataProcessor:
+    """
+    Data Processing class for audio-to-audio MDNRNN 
+    """
 
     def __init__(self, wav_dir, mfcc_file=None, n_mfcc=20):
         """

@@ -1,18 +1,22 @@
-#from DataProcessor import DataProcessor
+"""
+Audio-to-Audio Mixture Density Recurrent Neural Network
+An MDRNN for generating digital audio signals.
+Developed as part of IN5490 at the University of Oslo, 
+Research Group for Robotics and Intelligent Systems, 2018.
+"""
 import librosa, librosa.display
-# import matplotlib.pyplot as plt
 import numpy as np
-from keras.models import Sequential
-from keras.models import model_from_json
-from keras.layers import Dense, LSTM, TimeDistributed, BatchNormalization, Bidirectional
-from keras import regularizers, optimizers
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.layers import Dense, LSTM, TimeDistributed, BatchNormalization, Bidirectional
+from tensorflow.keras import regularizers, optimizers
+import tensorflow.keras as keras
 import tqdm
 import sys
-import keras
-import Callbacks
 import mdn
 import time
 import datetime
+from .callbacks import stats_callback
 
 
 class Model:
@@ -22,36 +26,38 @@ class Model:
         self.base_dir = base_dir
         self.name = name
         self.model_version = model_version
-        self.stats_cb = Callbacks.stats_callback()
+        self.stats_cb = stats_callback()
         self.stats_cb.Model = self
 
-    def kSM(self, n_mixes=5):
+    def kSM(self, units=160, n_mixes=5):
         """
         Initialize k-Shifted Model
         """
         self.n_mixes = n_mixes
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[1]
-
         self.model = Sequential()
-        self.model.add(LSTM(units=160, return_sequences=True,  
+        self.model.add(LSTM(units=units, return_sequences=True,  
             input_shape=self.data_processor.input_data.shape[1:]))
-        self.model.add(LSTM(units=160, return_sequences=True))
-        self.model.add(LSTM(units=160))
+        self.model.add(LSTM(units=units, return_sequences=True))
+        self.model.add(LSTM(units=units))
         self.model.add(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes))
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS, 
             self.n_mixes), optimizer='nadam')
+        print(self.model.summary())
+                
 
-    def TDkSM(self, n_mixes=5, name="default2", n_units=256):
+    def TDkSM(self, n_mixes=5, units=50, name="default2"):
         """
         Initialize Time-Distributed k-Shifted Model
         """
         self.n_mixes = n_mixes
+        self.units = units
         self.OUTPUT_DIMS = self.data_processor.target_data.shape[2]
         self.model = Sequential()
-        self.model.add(LSTM(units=n_units, return_sequences=True,
+        self.model.add(LSTM(units=self.units, return_sequences=True,
             input_shape=self.data_processor.input_data.shape[1:]))
-        self.model.add(LSTM(units=n_units, return_sequences=True))
-        self.model.add(LSTM(units=n_units, return_sequences=True))
+        self.model.add(LSTM(units=self.units, return_sequences=True))
+        self.model.add(LSTM(units=self.units, return_sequences=True))
         self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes)))
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS,
             self.n_mixes), optimizer='nadam')
@@ -82,14 +88,6 @@ class Model:
                                  validation_split=validation_split,
                                  callbacks=callbacks)
         self.save()
-        # fig = plt.figure(4)
-        # plt.subplot(2,1,1)
-        # plt.plot(history.history['loss'])
-        # plt.title('training loss')
-        # plt.subplot(2,1,2)
-        # plt.plot(history.history['val_loss'])
-        # plt.title('validation loss')
-        # fig.savefig(self.base_dir + "plots/{}_loss.png".format(self.name))
 
     def predict_sequence(self, input_data_start=0, num_preds=800,
                          plot_stats=True, save_wav=True):
@@ -144,9 +142,6 @@ class Model:
 
         librosa.output.write_wav(self.base_dir + "results/{}.wav".format(self.name),
             out_sequence, self.data_processor.sr, norm=True)
-        #fig = plt.figure(3)
-        #librosa.display.waveplot(out_sequence, self.data_processor.sr)
-        #fig.savefig(self.base_dir + "plots/{}.png".format(self.name))
 
 
     def _mixture_components(self, predictions, num_plots=1):
@@ -170,26 +165,7 @@ class Model:
             stats[i][9] = np.std(pis)
             stats[i][10] = np.max(pis)
             stats[i][11] = np.min(pis)
-
         stats = np.array(stats)
-
-        #fig = plt.figure(num_plots)
-        #x_label = ['mean', 'std', 'max', 'min']
-        #y_label = ['sigs', 'means', 'pis']
-        #x,y=0,0
-        #for i in range(12):
-        #    plt.subplot(3,4,i+1)
-        #    plt.plot(np.linspace(0, len(stats)-1, len(stats)), stats[:,i])
-        #    if(i>7):
-        #        plt.xlabel(x_label[x])
-        #        x += 1
-        #    if((i+1)%4==1):
-        #        plt.ylabel(y_label[y])
-        #        y += 1
-        #if(num_plots==1):
-        #    fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name))
-        #elif(num_plots==2):
-        #    fig.savefig(self.base_dir + "plots/{}_stats.png".format(self.name + "_train"))
 
 
     def save(self):

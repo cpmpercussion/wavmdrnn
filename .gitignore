@@ -130,4 +130,5 @@ dmypy.json
 *.hdf5
 *tfevents*
 results
-
+*.wav
+.DS_Store

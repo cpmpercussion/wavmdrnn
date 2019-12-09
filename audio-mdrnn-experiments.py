@@ -1,5 +1,5 @@
-from DataProcessor import DataProcessor
-from Model import Model
+from wavmdrnn.dataprocessor import DataProcessor
+from wavmdrnn import Model
 import argparse
 
 """
@@ -21,6 +21,7 @@ parser.add_argument('-s', '--starttrain', dest='start_train', action="store_true
 parser.add_argument('-m', '--moretrain', dest='more_train', action="store_true", help="")
 parser.add_argument('-p', '--predict', dest='predict', action="store_true", help="")
 parser.add_argument('-n', '--name', dest="name", action='store', default='derp', help="")
+parser.add_argument('-f', '--files', dest="wavfiles", action='store', default="./wavfiles", help="Location of wav files for training the model.")
 args = parser.parse_args()
 
 #Choices: 1 => kSM, 2 => TDkSM
@@ -36,13 +37,13 @@ k = 1
 percentile_test = 0
 validation_split = 0.15
 num_epochs = 50
-N_MIXES = 10
-batch_size = 128
+N_MIXES = 5
+batch_size = 64
 input_data_start = 0
 num_preds = 50
 
 #data_processor = DataProcessor(start_file_num=1, num_files=num_files, n_mfcc=n_mfcc)
-data_processor = DataProcessor(wav_dir="/home/charles/data/carillon", n_mfcc=n_mfcc)
+data_processor = DataProcessor(wav_dir=args.wavfiles, n_mfcc=n_mfcc)
 
 data_processor.choose_data_model(normalization_version=normalization_version, 
 	data_version=model_choice, 

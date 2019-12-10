@@ -61,8 +61,7 @@ class Model:
         self.model.add(TimeDistributed(mdn.MDN(self.OUTPUT_DIMS, self.n_mixes)))
         self.model.compile(loss=mdn.get_mixture_loss_func(self.OUTPUT_DIMS,
             self.n_mixes), optimizer='nadam')
-        print(self.model.summary())
-
+        self.model.summary()
 
     def train(self, epochs, batch_size=64, validation_split=0.15):
         """

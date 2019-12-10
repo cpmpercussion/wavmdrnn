@@ -170,14 +170,17 @@ class DataProcessor:
         """
         n_mfcc = mfccs.shape[0]
         n_mel = 128
-        dctm = librosa.filters.dct(n_mfcc, n_mel)
+        # replace deprecated librosa.filters.dct: (algorithm taken from librosa 0.6.1)
+        dct_m = np.empty((n_mfcc, n_mel))
+        dct_m[0, :] = 1.0 / np.sqrt(n_mel)
+        samples = np.arange(1, 2*n_mel, 2) * np.pi / (2.0 * n_mel)
+        for i in range(1, n_mfcc):
+            dct_m[i, :] = np.cos(i*samples) * np.sqrt(2.0/n_mel)
+        # dctm = librosa.filters.dct(n_mfcc, n_mel)
         n_fft = 2048
         mel_basis = librosa.filters.mel(self.sr, n_fft)
-
         bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
-
-        recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
-
+        recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dct_m.T, mfccs)))
         shape_inv_recon = librosa.istft(recon_stft).shape[0]
         #excitation = np.random.randn(self.wav_shape)
         excitation = np.random.randn(shape_inv_recon)

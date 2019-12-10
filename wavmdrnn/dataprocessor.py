@@ -7,7 +7,7 @@ import os
 from .mmse import MMSESTSA
 
 
-DEFAULT_MFCC_FILENAME = "data_processor_mfccs.npz"
+DEFAULT_MFCC_FILENAME = "data_processor"
 
 
 class DataProcessor:
@@ -33,7 +33,7 @@ class DataProcessor:
             self.wav_shape = data.shape[0]
             # data = self.reduce_noise(data)
             self.MFCCs = librosa.feature.mfcc(data, n_mfcc=n_mfcc)
-            np.savez(DEFAULT_MFCC_FILENAME, mfccs=self.MFCCs)
+            np.savez(DEFAULT_MFCC_FILENAME + str(n_mfcc) + "mfcc.npz", mfccs=self.MFCCs)
         else:
             with np.load(mfcc_file) as data:
                 self.MFCCs = data['mfccs']
@@ -247,7 +247,7 @@ class DataProcessor:
         """
         MMSE-STSA
         """
-        output, saved_params = mmse.MMSESTSA(signal, self.sr)
+        output, saved_params = MMSESTSA(signal, self.sr)
         return output[:,0]
 
 if __name__ == "__main__":

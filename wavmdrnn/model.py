@@ -21,7 +21,7 @@ from .callbacks import stats_callback
 
 class Model:
 
-    def __init__(self, data_processor, base_dir="../", model_version = 1, name="default"):
+    def __init__(self, data_processor, base_dir="./", model_version = 1, name="default"):
         self.data_processor = data_processor
         self.base_dir = base_dir
         self.name = name
@@ -77,7 +77,6 @@ class Model:
                                                      mode='min')
         terminateOnNaN = keras.callbacks.TerminateOnNaN()
         tboard = keras.callbacks.TensorBoard(log_dir=self.base_dir + 'logs/' + date_string + "wavmdrnn",
-                                     histogram_freq=2,
                                      batch_size=32,
                                      write_graph=True,
                                      update_freq='epoch')

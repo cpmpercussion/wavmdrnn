@@ -1,21 +1,21 @@
 from wavmdrnn.dataprocessor import DataProcessor
 from wavmdrnn import Model
+import tensorflow as tf
+config = tf.ConfigProto()
 
 print("Running simple wavmdrnn experiment.")
 # Setup hyperparameters
 model_choice = 2
 #Choices: 1 => [0, 1], 2 => N(0, 1), 3 => [-1, 1]
 normalization_version = 2
-n_mfcc = 35
+n_mfcc = 50
 num_time_steps = 201
 k = 1
 percentile_test = 0
 validation_split = 0.15
-num_epochs = 50
-N_MIXES = 5
+N_MIXES = 10
+num_epochs = 100
 batch_size = 64
-input_data_start = 0
-num_preds = 50
 
 print("Loading data...")
 # ## Load the data
@@ -41,5 +41,4 @@ model.train(epochs=num_epochs, batch_size=batch_size, validation_split=validatio
 
 print("Predicting...")
 # Do some predicting.
-model.predict_sequence(input_data_start=input_data_start, num_preds=num_preds, plot_stats=True, save_wav=True)
-
+model.predict_sequence(input_data_start=5000, num_preds=1000, plot_stats=False, save_wav=True)
